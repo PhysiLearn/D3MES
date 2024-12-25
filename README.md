@@ -1,4 +1,18 @@
 # DTMEAM
+
+To facilitate data uniformity, we uploaded our processed data in Kaggle, please download the corresponding three datasets from xx first.
+
+## 1. Randomized generation based on qm9 dataset
+
+To train the model, please run:
+
+```bash
+python train_random_qm9.py --global-batch-size=1024 --epochs=5000 --num-workers=0 --ckpt-every=20000
+```
+
+
+
+# DTMEAM
 # To facilitate data uniformity, we uploaded our processed data in kaggle, please download the corresponding three datasets from xx first.
 
 # 1. Randomized generation based on qm9 dataset
