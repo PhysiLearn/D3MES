@@ -1,6 +1,6 @@
 # D3MES
 
-To facilitate data uniformity, we uploaded our processed data in Kaggle, please download the corresponding three datasets from xx first.
+Diffusion model for 3D molecule generation that combines a classifiable diffusion model, Diffusion Transformer, with multihead equivariant self-attention.
 
 ## 1. Randomized generation based on qm9 dataset
 
