@@ -5,7 +5,7 @@ Understanding and predicting the diverse conformational states of molecules is c
 In this project, we introduce **D3MES**, a diffusion model for three-dimensional (3D) molecule generation that combines a classifiable diffusion model, **Diffusion Transformer**, with **multihead equivariant self-attention**. Our method addresses two key challenges:  
 1. Correctly attaching hydrogen atoms in generated molecules by learning representations of molecules after hydrogen atoms are removed.  
 2. Generating molecules across multiple classes simultaneously, overcoming the limitations of existing models.
-![D3MES Architecture](pictures/etc.png)
+![Model Architecture](pictures/otc.png)
 
 ## Key Features
 - State-of-the-art performance on molecular generation tasks.
