@@ -70,3 +70,17 @@ For evaluation related please run the following code:
 ```bash
 python eval_drugs.py
 ```
+### Citation
+```
+@misc{zhang2025d3mesdiffusiontransformermultihead,
+      title={D3MES: Diffusion Transformer with multihead equivariant self-attention for 3D molecule generation}, 
+      author={Zhejun Zhang and Yuanping Chen and Shibing Chu},
+      year={2025},
+      eprint={2501.07077},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2501.07077}, 
+}
+```
+### Contact
+If there are any issues and questions, please leave us issues on Github or send me email (Shibing Chu c◎ujs dot edu dot cn).
