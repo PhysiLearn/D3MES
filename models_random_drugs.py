@@ -127,13 +127,11 @@ class DiTBlock(nn.Module):
         shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = self.adaLN_modulation(c).chunk(6, dim=1)
 
 
-        # 打印 Attention 模块输入的形状
         modulated_x = modulate(self.norm1(x), shift_msa, scale_msa)
         #print("Attention input shape:", modulated_x.shape)
 
         #attn_output = self.attn(modulated_x)
 
-        # 打印 Attention 模块输出的形状
         #print("Attention output shape:", attn_output.shape)
         x = x + gate_msa.unsqueeze(1) * self.attn(modulate(self.norm1(x), shift_msa, scale_msa))
         x = x + gate_mlp.unsqueeze(1) * self.mlp(modulate(self.norm2(x), shift_mlp, scale_mlp))
@@ -251,7 +249,7 @@ class DiT(nn.Module):
         p = self.x_embedder.patch_size[0]
         #print("x.shape[1]",x.shape)
         #h = w = int(x.shape[1] ** 0.5)
-        h = 27
+        h = 25
         w = 1
         assert h * w == x.shape[1]
 

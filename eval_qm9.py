@@ -1,32 +1,32 @@
 import numpy as np
 from rdkit import Chem
 import pandas as pd
-# 读取 .npz 文件
+
 data = np.load('qm9gen.npz')
 molecule_data = data['samples']
-# 提取前两个通道的数据
-channel_1 = molecule_data[:, 0, :, :]  # 第一个通道（XYZ坐标）
-channel_2 = molecule_data[:, 1, :, :]  # 第二个通道（原子类型）
 
-# 四舍五入操作
+channel_1 = molecule_data[:, 0, :, :]  
+channel_2 = molecule_data[:, 1, :, :] 
+
+
 channel_2 = np.round(channel_2)
 
-# 删除每个分子中全0的行，并且删除对应的第一通道（XYZ坐标）行
+
 channel_2_non_zero = [molecule[molecule.any(axis=1)] for molecule in channel_2]
 channel_1_non_zero = [channel_1[i][molecule.any(axis=1)] for i, molecule in enumerate(channel_2)]
 
-# 原子类型映射
+
 def get_atom_type(atom_str):
     atom_map = {
         100: 'C', 110: 'H', 10: 'N', 1: 'O', 111: 'F'
     }
     return atom_map.get(int(atom_str), 'Unknown')
 
-# 计算原子之间的距离
+
 def compute_distance(atom1, atom2):
     return np.linalg.norm(atom1 - atom2)
 
-# 键长字典
+
 # Bond lengths from:
 # http://www.wiredchemist.com/chemistry/data/bond_energies_lengths.html
 # And:
@@ -127,31 +127,30 @@ allowed_bonds = {'H': 1, 'C': 4, 'N': 3, 'O': 2, 'F': 1, 'B': 3, 'Al': 3,
                  'Bi': [3, 5]}
 
 def get_bond_order(atom1, atom2, distance):
-    distance = 100 * distance  # 调整单位
+    distance = 100 * distance 
 
     if distance < bonds1[atom1][atom2]:
         if atom1 in bonds2 and atom2 in bonds2[atom1]:
             if distance < bonds2[atom1][atom2]:
                 if atom1 in bonds3 and atom2 in bonds3[atom1]:
                     if distance < bonds3[atom1][atom2]:
-                        return 3  # 三键
-                return 2  # 双键
-        return 1  # 单键
-    return 0  # 无键
+                        return 3
+                return 2 
+        return 1 
+    return 0 
 
 def print_bond_counts_and_stability(molecule_data, xyz_data, allowed_bonds):
     stable_atoms = 0
     total_atoms = 0
-    unstable_atoms = 0  # 用于记录不稳定原子的数量
+    unstable_atoms = 0  
 
     for molecule_idx, molecule in enumerate(molecule_data):
         xyz = xyz_data[molecule_idx]
         num_atoms = molecule.shape[0]
 
-        # 检查该分子中是否包含无法识别的原子类型
         if any(get_atom_type(''.join(molecule[atom_idx].astype(int).astype(str))) == 'Unknown' for atom_idx in range(num_atoms)):
-            #print(f"分子 {molecule_idx} 包含无法识别的原子类型，跳过此分子。")
-            continue  # 如果有无法识别的原子，跳过此分子
+            #print(f"The molecule {molecule_idx} contains an unrecognized atomic type, skip this molecule.")
+            continue 
 
         bond_counts = {i: 0 for i in range(num_atoms)}
 
@@ -175,33 +174,31 @@ def print_bond_counts_and_stability(molecule_data, xyz_data, allowed_bonds):
             total_atoms += 1
             total_bonds = bond_counts[atom_idx]
 
-            # 计算原子的最大允许键数
+
             allowed_bond_count = allowed_bonds.get(atom_type)
             if isinstance(allowed_bond_count, list):
-                allowed_bond_count = max(allowed_bond_count)  # 使用最大值
+                allowed_bond_count = max(allowed_bond_count)
 
             if total_bonds <= allowed_bond_count:
                 stable_atoms += 1
-                #print(f"分子 {molecule_idx}, 原子 {atom_idx} ({atom_type}) - 总键连接数: {total_bonds}, 最大允许键数: {allowed_bond_count}, 稳定性: 稳定")
+                #print(f"molecular {molecule_idx}, atom {atom_idx} ({atom_type}) - Total number of key connections: {total_bonds}, Maximum allowed number of keys: {allowed_bond_count}, Stability: Stable")
             else:
                 unstable_atoms += 1
-                #print(f"分子 {molecule_idx}, 原子 {atom_idx} ({atom_type}) - 总键连接数: {total_bonds}, 最大允许键数: {allowed_bond_count}, 稳定性: 不稳定")
+                #print(f"molecular {molecule_idx}, atom {atom_idx} ({atom_type}) - Total number of key connections: {total_bonds}, Maximum allowed number of keys: {allowed_bond_count}, Stability: Unstable")
 
     stability_ratio = stable_atoms / total_atoms if total_atoms > 0 else 0
     print(f"Atom stable(%): {stability_ratio:.4f} ")
 
-# 调用打印函数来显示每个原子的稳定性
 print_bond_counts_and_stability(channel_2_non_zero, channel_1_non_zero, allowed_bonds)
 
 def check_molecule_stability(molecule, xyz_data, allowed_bonds):
     num_atoms = molecule.shape[0]
     bond_counts = {i: 0 for i in range(num_atoms)}
 
-    # 检查是否存在无法识别的原子类型
     for atom_idx in range(num_atoms):
         atom_type = get_atom_type(''.join(molecule[atom_idx].astype(int).astype(str)))
         if atom_type == 'Unknown':
-            return False  # 遇到无法识别的原子类型，直接认为不稳定
+            return False 
 
     for atom1_idx in range(num_atoms):
         for atom2_idx in range(atom1_idx + 1, num_atoms):
@@ -218,20 +215,19 @@ def check_molecule_stability(molecule, xyz_data, allowed_bonds):
                 bond_counts[atom1_idx] += 1
                 bond_counts[atom2_idx] += 1
 
-    # 检查每个原子的稳定性
     for atom_idx in range(num_atoms):
         atom_type = get_atom_type(''.join(molecule[atom_idx].astype(int).astype(str)))
         total_bonds = bond_counts[atom_idx]
 
-        # 获取该原子的最大允许键数
+
         allowed_bond_count = allowed_bonds.get(atom_type)
         if isinstance(allowed_bond_count, list):
-            allowed_bond_count = max(allowed_bond_count)  # 使用最大值
+            allowed_bond_count = max(allowed_bond_count)
 
         if total_bonds > allowed_bond_count:
-            return False  # 只要一个原子不稳定，整个分子不稳定
+            return False  
 
-    return True  # 如果所有原子稳定，分子稳定
+    return True  
 
 def compute_molecular_stability(channel_2_non_zero, channel_1_non_zero, allowed_bonds):
     stable_molecules = 0
@@ -245,30 +241,23 @@ def compute_molecular_stability(channel_2_non_zero, channel_1_non_zero, allowed_
     print(f"Mol stable(%)：{molecular_stability:.4f} ")
 
 
-# 计算并输出分子稳定性
 compute_molecular_stability(channel_2_non_zero, channel_1_non_zero, allowed_bonds)
-# 获取每个原子的稳定性，判断是否满足 allowed_bonds 限制
 
 def get_smiles_from_molecule(molecule, xyz_data):
-    # 假设你已经有了原子类型和坐标数据，并且能成功构建一个分子
     atom_types = [get_atom_type(''.join(molecule[atom_idx].astype(int).astype(str))) for atom_idx in range(molecule.shape[0])]
 
-    # 检查是否存在无法识别的原子类型
     if any(atom_type == 'Unknown' for atom_type in atom_types):
-        return None  # 如果有无法识别的原子，跳过该分子的SMILES生成
+        return None 
 
-    # 创建 RDKit 分子对象
     mol = Chem.RWMol()
 
-    atom_map = {}  # 用来映射原子到分子中的位置
+    atom_map = {} 
 
-    # 添加原子
     for idx, atom_type in enumerate(atom_types):
         rd_atom = Chem.Atom(atom_type)
         atom_idx = mol.AddAtom(rd_atom)
         atom_map[idx] = atom_idx
 
-    # 添加键（使用 get_bond_order 函数来判断键类型）
     num_atoms = len(atom_types)
     for i in range(num_atoms):
         for j in range(i + 1, num_atoms):
@@ -282,7 +271,6 @@ def get_smiles_from_molecule(molecule, xyz_data):
             bond_order = get_bond_order(atom1_type, atom2_type, distance)
 
             if bond_order > 0:
-                # 使用 get_bond_order 返回的键类型来添加键
                 if bond_order == 1:
                     mol.AddBond(atom_map[i], atom_map[j], Chem.BondType.SINGLE)
                 elif bond_order == 2:
@@ -290,87 +278,75 @@ def get_smiles_from_molecule(molecule, xyz_data):
                 elif bond_order == 3:
                     mol.AddBond(atom_map[i], atom_map[j], Chem.BondType.TRIPLE)
 
-    # 生成 SMILES
+
     smiles = Chem.MolToSmiles(mol)
 
-    # 检查 SMILES 是否有效并且不在训练集中
     if smiles:
         return smiles
     else:
         return None
 
 def compute_valid_and_unique_ratio(channel_2_non_zero, channel_1_non_zero):
-    all_smiles = []  # 用来存储所有生成的 SMILES
-    valid_smiles = set()  # 用来存储有效的 SMILES集合
-    unique_smiles = set()  # 用来存储唯一的 SMILES集合
-    total_molecules = len(channel_2_non_zero)  # 总分子数量
+    all_smiles = [] 
+    valid_smiles = set()  
+    unique_smiles = set()  
+    total_molecules = len(channel_2_non_zero)  
 
-    # 遍历每个分子
     for molecule, xyz_data in zip(channel_2_non_zero, channel_1_non_zero):
-        # 生成 SMILES
         smiles = get_smiles_from_molecule(molecule, xyz_data)
 
-        if smiles:  # 如果生成了有效的 SMILES
+        if smiles:  
             all_smiles.append(smiles)
-            valid_smiles.add(smiles)  # 将有效的 SMILES 添加到集合中
+            valid_smiles.add(smiles)
 
-    # 统计唯一的 SMILES
-    smile_counts = pd.Series(all_smiles).value_counts()  # 统计每个 SMILES 出现的次数
-    unique_smiles = {smiles for smiles, count in smile_counts.items() if count == 1}  # 只保留出现一次的 SMILES
+    smile_counts = pd.Series(all_smiles).value_counts() 
+    unique_smiles = {smiles for smiles, count in smile_counts.items() if count == 1}
 
-    # 计算有效分子占比
+
     valid_ratio = len(valid_smiles) / total_molecules if total_molecules > 0 else 0
-    # 计算唯一 SMILES 占比
+
     unique_ratio = len(unique_smiles) / len(valid_smiles) if len(valid_smiles) > 0 else 0
 
-    # 输出结果
+
     print(f"Valid(%): {valid_ratio:.4f}")
     print(f"Valid and Unique(%): {unique_ratio:.4f}")
 
 
-# 调用该函数
 compute_valid_and_unique_ratio(channel_2_non_zero, channel_1_non_zero)
 
 def compute_smiles_not_in_dataset_ratio(channel_2_non_zero, channel_1_non_zero, smiles_dataset,
                                         output_file='capgenring.txt'):
     stable_molecules = 0
     not_in_dataset_molecules = 0
-    valid_smiles = set()  # 用于存储唯一有效的 SMILES
+    valid_smiles = set()  
     total_molecules = len(channel_2_non_zero)
 
-    # 将数据集中的所有 SMILES 存储在集合中，快速查找
-    dataset_smiles = set(smiles_dataset.iloc[:, 1].dropna())  # 第二列的 SMILES
+    dataset_smiles = set(smiles_dataset.iloc[:, 1].dropna()) 
 
-    # 打开输出文件准备写入 SMILES
     with open(output_file, 'w') as f:
-        f.write("Generated SMILES (not in dataset)\n")  # 可选：写入标题
+        f.write("Generated SMILES (not in dataset)\n") 
 
         for molecule, xyz_data in zip(channel_2_non_zero, channel_1_non_zero):
-            # 判断分子是否稳定
+
             if check_molecule_stability(molecule, xyz_data, allowed_bonds):
                 stable_molecules += 1
 
-                # 判断 SMILES 是否有效
                 smiles = get_smiles_from_molecule(molecule, xyz_data)
 
-                if smiles:  # 如果生成有效的 SMILES
-                    valid_smiles.add(smiles)  # 将有效的 SMILES 添加到集合中
+                if smiles: 
+                    valid_smiles.add(smiles)  
 
-                    # 检查生成的 SMILES 是否存在于数据集中
                     if smiles not in dataset_smiles:
                         not_in_dataset_molecules += 1
-                        # 将 SMILES 写入到文件
-                        f.write(smiles + '\n')  # 每个 SMILES 单独一行
 
-    # 计算不在数据集中的 SMILES 的比例
+                        f.write(smiles + '\n')  
+
     not_in_dataset_ratio = not_in_dataset_molecules / stable_molecules if stable_molecules > 0 else 0
     print(f"Novelty(%)：{not_in_dataset_ratio:.4f} ")
 
 
 
-# 调用函数来计算不在数据集中的 SMILES 的比例，并保存到文本文件
-# 假设 smiles_dataset 是从 csv 文件中读取的 DataFrame
 
-smiles_dataset = pd.read_csv("qm9_dataset.csv")  # 读取包含 SMILES 数据集的 CSV 文件
+smiles_dataset = pd.read_csv("qm9_dataset.csv") 
 compute_smiles_not_in_dataset_ratio(channel_2_non_zero, channel_1_non_zero, smiles_dataset,
                                     output_file='capgenring.txt')

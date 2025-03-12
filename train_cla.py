@@ -171,21 +171,19 @@ def main(args):
     #     transforms.ToTensor(),
     #     transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5], inplace=True)
     # ])
-    data = np.load('merged_molecules.npz')
-    # 将数据加载为 data 类型
+    data = np.load('classchembl.npz')
+
     x = torch.from_numpy(data['data']).to(torch.float).cuda()
     #x = x.transpose(0, 1).to(torch.float).cuda()
-    zeros_tensor = torch.zeros(14127)
 
-    # # 创建包含 65898 个 1 的张量
-    ones_tensor = torch.ones(14127)
 
-    # # 将两个张量连接起来
-    y = torch.cat((zeros_tensor, ones_tensor)).cuda()
-    #y = torch.zeros(133247).cuda()
-    # print(f"x shape: {x.shape}, dtype: {x.dtype}")
-    #print(f"y shape: {y.shape}, dtype: {y.dtype}")
+    zeros_tensor = torch.zeros(19977).cuda()
 
+    ones_tensor = torch.ones(20000).cuda()
+
+    twos_tensor = torch.full((20000,), 2).cuda()
+
+    y = torch.cat((zeros_tensor, ones_tensor, twos_tensor)).cuda()
     
     class CustomDataset(Dataset):
         def __init__(self, x, y):

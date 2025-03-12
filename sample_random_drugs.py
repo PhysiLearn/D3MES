@@ -61,17 +61,10 @@ def main(args):
     # 生成数据
     generated_data = samples.cpu().numpy()
     output_npz_path = "drugsgen.npz"
-    output_csv_path = "drugsgen.csv"
     
     # 保存为npz文件
     np.savez(output_npz_path, data=generated_data)
     print(f"Generated data saved to {output_npz_path}")
-    
-    # 保存为CSV文件
-    first_sample = generated_data  # 获取第一组样本
-    df = pd.DataFrame(first_sample.reshape(-1, first_sample.shape[-1]))  # 将数据重新排列成二维数组并转换为DataFrame
-    df.to_csv(output_csv_path, index=False, header=False)  # 将DataFrame保存为CSV文件，禁用索引和列名
-    print(f"Generated data saved to {output_csv_path}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
